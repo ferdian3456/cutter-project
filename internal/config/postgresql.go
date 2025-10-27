@@ -16,8 +16,8 @@ func NewPostgresqlPool(config *koanf.Koanf, log *zap.Logger) *pgxpool.Pool {
 		log.Fatal("Failed to parse postgresl config", zap.Error(err))
 	}
 
-	pgxConfig.MaxConns = 100
-	pgxConfig.MinConns = 20
+	pgxConfig.MaxConns = 20
+	pgxConfig.MinConns = 5
 	pgxConfig.MaxConnLifetime = 30 * time.Minute
 	pgxConfig.MaxConnIdleTime = 5 * time.Minute
 	pgxConfig.HealthCheckPeriod = 1 * time.Minute

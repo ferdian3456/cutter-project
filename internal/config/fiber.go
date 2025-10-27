@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func NewFiber() *fiber.Handler {
+func NewFiber() *fiber.App {
 	app := fiber.New(fiber.Config{
 		Prefork:               true,
 		AppName:               "Cutter Project",
@@ -25,5 +25,5 @@ func NewFiber() *fiber.Handler {
 		JSONDecoder:           sonic.Unmarshal,
 	})
 
-	return app.Handler()
+	return app
 }

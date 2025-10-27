@@ -6,6 +6,7 @@ import (
 	"cutterproject/internal/delivery/http/route"
 	"cutterproject/internal/repository"
 	"cutterproject/internal/usecase"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/knadh/koanf/v2"
@@ -14,7 +15,7 @@ import (
 )
 
 type ServerConfig struct {
-	Router  *fiber.Handler
+	Router  *fiber.App
 	DB      *pgxpool.Pool
 	DBCache *redis.Client
 	Log     *zap.Logger
@@ -30,6 +31,7 @@ func Server(config *ServerConfig) {
 
 	routeConfig := route.RouteConfig{
 		App:            config.Router,
+		UserController: userController,
 		AuthMiddleware: authMiddleware,
 	}
 

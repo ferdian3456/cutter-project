@@ -1,6 +1,7 @@
 package route
 
 import (
+	"cutterproject/internal/delivery/http"
 	"cutterproject/internal/delivery/http/middleware"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,8 +9,8 @@ import (
 
 type RouteConfig struct {
 	App            *fiber.App
-	AuthMiddleware fiber.Handler
-	//UserController *http.UserController
+	AuthMiddleware *middleware.AuthMiddleware
+	UserController *http.UserController
 }
 
 func (c *RouteConfig) SetupRoute() {
@@ -19,5 +20,12 @@ func (c *RouteConfig) SetupRoute() {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 
-	userGroup := api.Group("/user", c.App.Use(c.AuthMiddleware))
+	authGroup := api.Group("/auth")
+	authGroup.Post("/register", c.UserController.Register)
+	//authGroup.Post("/login")
+
+	userGroup := api.Group("/users")
+	//userGroup.Get("/me")
+	userGroup.Get("/:userId", c.UserController.GetUserInfo)
+	//userGroup.Delete("/:userId")
 }

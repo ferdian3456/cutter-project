@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func main() {
 	fiber := config.NewFiber()
 	zap := config.NewZap()
 	koanf := config.NewKoanf(zap)
-	rds := config.NewRedisCluster(koanf, zap)
+	rds := config.NewRedisClient(koanf, zap)
 	postgresql := config.NewPostgresqlPool(koanf, zap)
 
 	fiber.Use(recover.New(recover.Config{
@@ -34,7 +34,7 @@ func main() {
 	}))
 
 	config.Server(&config.ServerConfig{
-		Router:  fiber.,
+		Router:  fiber,
 		DB:      postgresql,
 		DBCache: rds,
 		Log:     zap,

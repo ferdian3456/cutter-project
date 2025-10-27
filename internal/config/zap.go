@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"strings"
 
 	"go.uber.org/zap"
@@ -9,7 +8,7 @@ import (
 )
 
 func NewZap() *zap.Logger {
-	levelStr := strings.ToLower(os.Getenv("LOG_LEVEL"))
+	levelStr := strings.ToLower("DEBUG")
 	var level zapcore.Level
 	switch levelStr {
 	case "debug":
