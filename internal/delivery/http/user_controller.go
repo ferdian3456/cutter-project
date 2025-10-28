@@ -38,7 +38,7 @@ func (controller UserController) Register(ctx *fiber.Ctx) error {
 
 	var validationErr *model.ValidationError
 
-	err = controller.UserUsecase.Register(ctx, payload)
+	response, err := controller.UserUsecase.Register(ctx, payload)
 	if err != nil {
 		if errors.As(err, &validationErr) {
 			return util.SendErrorResponse(ctx, err)
@@ -47,7 +47,7 @@ func (controller UserController) Register(ctx *fiber.Ctx) error {
 		return util.SendErrorResponseInternalServer(ctx, controller.Log, err)
 	}
 
-	return util.SendSuccessResponseNoData(ctx)
+	return util.SendSuccessResponseWithData(ctx, response)
 }
 
 func (controller UserController) GetUserInfo(ctx *fiber.Ctx) error {

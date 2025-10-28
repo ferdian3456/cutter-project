@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"cutterproject/internal/model"
 	"cutterproject/internal/usecase"
+	"cutterproject/internal/util"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/knadh/koanf/v2"
@@ -26,8 +29,20 @@ func NewAuthMiddleware(app *fiber.App, zap *zap.Logger, koanf *koanf.Koanf, user
 
 func (middleware *AuthMiddleware) ProtectedRoute() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		// TODO: Implement actual authentication logic here
-		// For now, just pass through to the next handler
+		var validationErr *model.ValidationError
+
+		accessToken := ctx.Get("Authorization")
+		userId, err := util.ValidateAccessToken(accessToken, middleware.Log, middleware.Config.String("JWT_SECRET_KEY"))
+		if err != nil {
+			if errors.As(err, &validationErr) {
+				return util.SendErrorResponseNotFound(ctx, err)
+			}
+
+			return util.SendErrorResponseInternalServer(ctx, middleware.Log, err)
+		}
+
+		middleware.Log.Debug("Middleware here", zap.Int("userId", userId))
+
 		return ctx.Next()
 	}
 }

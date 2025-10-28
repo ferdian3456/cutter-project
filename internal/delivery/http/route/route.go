@@ -24,7 +24,7 @@ func (c *RouteConfig) SetupRoute() {
 	authGroup.Post("/register", c.UserController.Register)
 	//authGroup.Post("/login")
 
-	userGroup := api.Group("/users")
+	userGroup := api.Group("/users", c.AuthMiddleware.ProtectedRoute())
 	//userGroup.Get("/me")
 	userGroup.Get("/:userId", c.UserController.GetUserInfo)
 	//userGroup.Delete("/:userId")

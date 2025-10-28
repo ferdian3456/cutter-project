@@ -26,14 +26,16 @@ func NewUserRepository(zap *zap.Logger, db *pgxpool.Pool, dbCache *redis.Client)
 	}
 }
 
-func (repository *UserRepository) Register(ctx context.Context, tx pgx.Tx, user model.User) error {
-	query := "INSERT INTO users (username,email,password,created_at,updated_at) VALUES ($1,$2,$3,$4,$5)"
-	_, err := tx.Exec(ctx, query, user.Username, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
+func (repository *UserRepository) Register(ctx context.Context, tx pgx.Tx, user model.User) (int, error) {
+	query := "INSERT INTO users (username,email,password,created_at,updated_at) VALUES ($1,$2,$3,$4,$5) RETURNING id"
+
+	var userId int
+	err := tx.QueryRow(ctx, query, user.Username, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&userId)
 	if err != nil {
-		return err
+		return userId, err
 	}
 
-	return nil
+	return userId, nil
 }
 
 func (repository *UserRepository) CheckUsernameOrEmailUnique(ctx context.Context, username string, email string) error {
