@@ -8,6 +8,11 @@ type UserCreateRequest struct {
 	Password string `json:"password"`
 }
 
+type UserLoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 type UserResponse struct {
 	Id        int       `json:"id"`
 	Username  string    `json:"username"`

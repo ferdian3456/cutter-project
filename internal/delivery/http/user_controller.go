@@ -50,11 +50,32 @@ func (controller UserController) Register(ctx *fiber.Ctx) error {
 	return util.SendSuccessResponseWithData(ctx, response)
 }
 
-func (controller UserController) GetUserInfo(ctx *fiber.Ctx) error {
-	userId, err := ctx.ParamsInt("userId")
+func (controller UserController) Login(ctx *fiber.Ctx) error {
+	var payload model.UserLoginRequest
+	err := util.ReadRequestBody(ctx, &payload)
 	if err != nil {
+		return util.SendErrorResponse(ctx, &model.ValidationError{
+			Code:    constant.ERR_INVALID_REQUEST_BODY_ERROR_CODE,
+			Message: constant.ERR_INVALID_REQUEST_BODY_MESSAGE,
+		})
+	}
+
+	var validationErr *model.ValidationError
+
+	response, err := controller.UserUsecase.Login(ctx, payload)
+	if err != nil {
+		if errors.As(err, &validationErr) {
+			return util.SendErrorResponse(ctx, err)
+		}
+
 		return util.SendErrorResponseInternalServer(ctx, controller.Log, err)
 	}
+
+	return util.SendSuccessResponseWithData(ctx, response)
+}
+
+func (controller UserController) GetUserInfo(ctx *fiber.Ctx) error {
+	userId := ctx.Locals("userId").(int)
 
 	var validationErr *model.ValidationError
 

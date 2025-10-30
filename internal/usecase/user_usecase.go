@@ -136,6 +136,82 @@ func (usecase *UserUsecase) Register(ctx *fiber.Ctx, payload model.UserCreateReq
 		return token, err
 	}
 
+	err = usecase.UserRepository.SetAuthTokenInCache(ctxContext, token.AccessToken, token.RefreshToken, userId)
+	if err != nil {
+		return token, err
+	}
+
+	return token, nil
+}
+
+func (usecase *UserUsecase) Login(ctx *fiber.Ctx, payload model.UserLoginRequest) (model.TokenResponse, error) {
+	ctxContext := ctx.Context()
+	token := model.TokenResponse{}
+
+	if payload.Email == "" {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "Email is required to not be empty",
+			Param:   "email",
+		}
+	} else if len(payload.Email) < 16 {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "email must be at least 16 characters",
+			Param:   "email",
+		}
+	} else if len(payload.Email) > 80 {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "Email must be at most 80 characters",
+			Param:   "email",
+		}
+	}
+
+	if payload.Password == "" {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "Password is required to not be empty",
+			Param:   "email",
+		}
+	} else if len(payload.Password) < 5 {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "Password must be at least 5 characters",
+			Param:   "email",
+		}
+	} else if len(payload.Password) > 20 {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "Password must be at most 20 characters",
+			Param:   "email",
+		}
+	}
+
+	userId, password, err := usecase.UserRepository.GetUserAuth(ctxContext, payload.Email)
+	if err != nil {
+		return token, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(payload.Password))
+	if err != nil {
+		return token, &model.ValidationError{
+			Code:    constant.ERR_VALIDATION_CODE,
+			Message: "Password is incorrect",
+			Param:   "password",
+		}
+	}
+
+	token, err = util.GenerateTokenPair(userId, usecase.Config.String("JWT_SECRET_KEY"))
+	if err != nil {
+		return token, err
+	}
+
+	err = usecase.UserRepository.SetAuthTokenInCache(ctxContext, token.AccessToken, token.RefreshToken, userId)
+	if err != nil {
+		return token, err
+	}
+
 	return token, nil
 }
 
@@ -146,4 +222,21 @@ func (usecase *UserUsecase) GetUserInfo(ctx *fiber.Ctx, id int) (model.UserRespo
 	}
 
 	return user, nil
+}
+
+func (usecase *UserUsecase) GetAccessToken(ctx *fiber.Ctx, userId int, accessToken string) error {
+	token, err := usecase.UserRepository.GetAccessTokenInCache(ctx.Context(), userId)
+	if err != nil {
+		return err
+	}
+
+	if accessToken != token {
+		return &model.ValidationError{
+			Code:    constant.ERR_NOT_FOUND_ERROR,
+			Message: "Authorization token is expired",
+			Param:   "accessToken",
+		}
+	}
+
+	return nil
 }

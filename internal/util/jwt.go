@@ -42,7 +42,7 @@ func GenerateAccessToken(userId int, jwtSecretKey string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(jwtSecretKey))
 	if err != nil {
-		return "", fmt.Errorf("failed to sign token: %w", err)
+		return "", err
 	}
 
 	return signedToken, nil
@@ -73,18 +73,18 @@ func GenerateTokenPair(userId int, jwtSecretKey string) (model.TokenResponse, er
 }
 
 // ValidateAccessToken validates a JWT access token and returns the user ID
-func ValidateAccessToken(accessToken string, log *zap.Logger, jwtSecretKey string) (int, error) {
+func ValidateAccessToken(accessToken string, log *zap.Logger, jwtSecretKey string) (string, int, error) {
 	// Don't log the full token - security risk
 	log.Debug("Validating access token", zap.String("accessToken", accessToken))
 
 	if jwtSecretKey == "" {
-		return 0, errors.New("jwt secret key is not configured")
+		return "", 0, errors.New("jwt secret key is not configured")
 	}
 
 	// Extract token from Authorization header
 	tokenString, err := extractBearerToken(accessToken)
 	if err != nil {
-		return 0, err
+		return "", 0, err
 	}
 
 	// Parse token with custom claims
@@ -97,20 +97,20 @@ func ValidateAccessToken(accessToken string, log *zap.Logger, jwtSecretKey strin
 	})
 
 	if err != nil {
-		return 0, handleParseError(err)
+		return "", 0, handleParseError(err)
 	}
 
 	// Extract and validate claims
 	claims, ok := token.Claims.(*model.Claims)
 	if !ok || !token.Valid {
-		return 0, &model.ValidationError{
+		return "", 0, &model.ValidationError{
 			Code:    constant.ERR_UNATHORIZED_ERROR,
 			Message: "Authentication token is invalid",
 			Param:   "accessToken",
 		}
 	}
 
-	return claims.UserId, nil
+	return tokenString, claims.UserId, nil
 }
 
 // extractBearerToken extracts the token from "Bearer <token>" format

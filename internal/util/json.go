@@ -35,7 +35,9 @@ func SendSuccessResponseWithData(ctx *fiber.Ctx, data interface{}) error {
 }
 
 func SendErrorResponse(ctx *fiber.Ctx, error error) error {
-	err := ctx.Status(fiber.StatusBadRequest).JSON(error)
+	err := ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		"error": error,
+	})
 	if err != nil {
 		return err
 	}
@@ -44,7 +46,9 @@ func SendErrorResponse(ctx *fiber.Ctx, error error) error {
 }
 
 func SendErrorResponseNotFound(ctx *fiber.Ctx, error error) error {
-	err := ctx.Status(fiber.StatusNotFound).JSON(error)
+	err := ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		"error": error,
+	})
 	if err != nil {
 		return err
 	}
@@ -55,8 +59,10 @@ func SendErrorResponseNotFound(ctx *fiber.Ctx, error error) error {
 func SendErrorResponseInternalServer(ctx *fiber.Ctx, log *zap.Logger, error error) error {
 	log.Debug("Internal server error occured", zap.Error(error))
 	err := ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-		"code":    constant.ERR_INTERNAL_SERVER_ERROR_CODE,
-		"message": constant.ERR_INTENRAL_SERVER_ERROR_MESSAGE,
+		"error": fiber.Map{
+			"code":    constant.ERR_INTERNAL_SERVER_ERROR_CODE,
+			"message": constant.ERR_INTENRAL_SERVER_ERROR_MESSAGE,
+		},
 	})
 
 	if err != nil {

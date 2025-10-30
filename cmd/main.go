@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+
 	// Flush zap buffered log first then cancel the context for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

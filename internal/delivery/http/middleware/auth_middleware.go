@@ -32,7 +32,7 @@ func (middleware *AuthMiddleware) ProtectedRoute() fiber.Handler {
 		var validationErr *model.ValidationError
 
 		accessToken := ctx.Get("Authorization")
-		userId, err := util.ValidateAccessToken(accessToken, middleware.Log, middleware.Config.String("JWT_SECRET_KEY"))
+		tokenString, userId, err := util.ValidateAccessToken(accessToken, middleware.Log, middleware.Config.String("JWT_SECRET_KEY"))
 		if err != nil {
 			if errors.As(err, &validationErr) {
 				return util.SendErrorResponseNotFound(ctx, err)
@@ -40,6 +40,17 @@ func (middleware *AuthMiddleware) ProtectedRoute() fiber.Handler {
 
 			return util.SendErrorResponseInternalServer(ctx, middleware.Log, err)
 		}
+
+		err = middleware.UserUsecase.GetAccessToken(ctx, userId, tokenString)
+		if err != nil {
+			if errors.As(err, &validationErr) {
+				return util.SendErrorResponseNotFound(ctx, err)
+			}
+
+			return util.SendErrorResponseInternalServer(ctx, middleware.Log, err)
+		}
+
+		ctx.Locals("userId", userId)
 
 		middleware.Log.Debug("Middleware here", zap.Int("userId", userId))
 
