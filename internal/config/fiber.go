@@ -9,8 +9,9 @@ import (
 
 func NewFiber() *fiber.App {
 	app := fiber.New(fiber.Config{
-		Prefork:               true,
-		AppName:               "Cutter Project",
+		//Prefork:               true,
+		Prefork:               false,
+		AppName:               "",
 		BodyLimit:             4 * 1024 * 1024, // 4MB
 		ReadBufferSize:        4096,
 		WriteBufferSize:       4096,
@@ -19,7 +20,7 @@ func NewFiber() *fiber.App {
 		ReadTimeout:           10 * time.Second,
 		WriteTimeout:          10 * time.Second,
 		DisableKeepalive:      false,
-		DisableStartupMessage: false,
+		DisableStartupMessage: true,
 		ReduceMemoryUsage:     true,
 		JSONEncoder:           sonic.Marshal,
 		JSONDecoder:           sonic.Unmarshal,

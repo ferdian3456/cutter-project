@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"cutterproject/internal/model"
-	"cutterproject/internal/usecase"
-	"cutterproject/internal/util"
 	"errors"
+
+	"github.com/ferdian3456/virdanproject/internal/model"
+	"github.com/ferdian3456/virdanproject/internal/usecase"
+	"github.com/ferdian3456/virdanproject/internal/util"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/knadh/koanf/v2"
@@ -52,7 +53,7 @@ func (middleware *AuthMiddleware) ProtectedRoute() fiber.Handler {
 
 		ctx.Locals("userId", userId)
 
-		middleware.Log.Debug("Middleware here", zap.Int("userId", userId))
+		middleware.Log.Debug("middleware here", zap.String("userId", userId.String()))
 
 		return ctx.Next()
 	}

@@ -29,7 +29,7 @@ func NewRedisClient(config *koanf.Koanf, log *zap.Logger) *redis.Client {
 
 	err := rdb.Ping(context.Background()).Err()
 	if err != nil {
-		log.Fatal("Failed to connect redis", zap.Error(err))
+		log.Fatal("failed to connect redis", zap.Error(err))
 	}
 
 	return rdb

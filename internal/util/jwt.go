@@ -1,11 +1,14 @@
 package util
 
 import (
-	"cutterproject/internal/constant"
-	"cutterproject/internal/model"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/ferdian3456/virdanproject/internal/constant"
+	"github.com/ferdian3456/virdanproject/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -16,18 +19,24 @@ import (
 
 var (
 	BearerPrefix            = "Bearer "
-	TokenIssuer             = "cutterproject"
+	TokenIssuer             = "github.com/ferdian3456/virdanproject"
 	AccessTokenDuration     = 15 * time.Minute
 	RefreshTokenDuration    = 7 * 24 * time.Hour
 	ErrInvalidSigningMethod = errors.New("invalid token signing method")
 )
 
-func GenerateAccessToken(userId int, jwtSecretKey string) (string, error) {
+// HashToken hashes a token using SHA256 for secure storage
+func HashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
+}
+
+func GenerateAccessToken(userId uuid.UUID, jwtSecretKey string) (string, error) {
 	if jwtSecretKey == "" {
 		return "", errors.New("jwt secret key is not configured")
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	claims := &model.Claims{
 		UserId: userId,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -35,7 +44,7 @@ func GenerateAccessToken(userId int, jwtSecretKey string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			Issuer:    TokenIssuer,
-			Subject:   fmt.Sprintf("user:%d", userId),
+			Subject:   fmt.Sprintf("user:%s", userId.String()),
 		},
 	}
 
@@ -55,7 +64,7 @@ func GenerateRefreshToken() string {
 }
 
 // GenerateTokenPair creates both access and refresh tokens for a user
-func GenerateTokenPair(userId int, jwtSecretKey string) (model.TokenResponse, error) {
+func GenerateTokenPair(userId uuid.UUID, jwtSecretKey string) (model.TokenResponse, error) {
 	accessToken, err := GenerateAccessToken(userId, jwtSecretKey)
 	if err != nil {
 		return model.TokenResponse{}, err
@@ -73,18 +82,18 @@ func GenerateTokenPair(userId int, jwtSecretKey string) (model.TokenResponse, er
 }
 
 // ValidateAccessToken validates a JWT access token and returns the user ID
-func ValidateAccessToken(accessToken string, log *zap.Logger, jwtSecretKey string) (string, int, error) {
+func ValidateAccessToken(accessToken string, log *zap.Logger, jwtSecretKey string) (string, uuid.UUID, error) {
 	// Don't log the full token - security risk
-	log.Debug("Validating access token", zap.String("accessToken", accessToken))
+	log.Debug("validating access token", zap.String("accessToken", accessToken[:20]))
 
 	if jwtSecretKey == "" {
-		return "", 0, errors.New("jwt secret key is not configured")
+		return "", uuid.Nil, errors.New("jwt secret key is not configured")
 	}
 
 	// Extract token from Authorization header
 	tokenString, err := extractBearerToken(accessToken)
 	if err != nil {
-		return "", 0, err
+		return "", uuid.Nil, err
 	}
 
 	// Parse token with custom claims
@@ -97,13 +106,13 @@ func ValidateAccessToken(accessToken string, log *zap.Logger, jwtSecretKey strin
 	})
 
 	if err != nil {
-		return "", 0, handleParseError(err)
+		return "", uuid.Nil, handleParseError(err)
 	}
 
 	// Extract and validate claims
 	claims, ok := token.Claims.(*model.Claims)
 	if !ok || !token.Valid {
-		return "", 0, &model.ValidationError{
+		return "", uuid.Nil, &model.ValidationError{
 			Code:    constant.ERR_UNATHORIZED_ERROR,
 			Message: "Authentication token is invalid",
 			Param:   "accessToken",

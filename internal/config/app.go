@@ -1,11 +1,12 @@
 package config
 
 import (
-	http "cutterproject/internal/delivery/http"
-	"cutterproject/internal/delivery/http/middleware"
-	"cutterproject/internal/delivery/http/route"
-	"cutterproject/internal/repository"
-	"cutterproject/internal/usecase"
+	http "github.com/ferdian3456/virdanproject/internal/delivery/http"
+	"github.com/ferdian3456/virdanproject/internal/delivery/http/middleware"
+	"github.com/ferdian3456/virdanproject/internal/delivery/http/route"
+	"github.com/ferdian3456/virdanproject/internal/repository"
+	"github.com/ferdian3456/virdanproject/internal/usecase"
+	"github.com/minio/minio-go/v7"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,19 +21,25 @@ type ServerConfig struct {
 	DBCache *redis.Client
 	Log     *zap.Logger
 	Config  *koanf.Koanf
+	MinIO   *minio.Client
 }
 
 func Server(config *ServerConfig) {
-	userRepository := repository.NewUserRepository(config.Log, config.DB, config.DBCache)
-	userUsecase := usecase.NewUserUsecase(userRepository, config.DB, config.Log, config.Config)
+	serverRepository := repository.NewServerRepository(config.Log, config.DB, config.DBCache)
+	serverUsecase := usecase.NewServerUsecase(serverRepository, config.DB, config.Log, config.Config)
+	serverController := http.NewServerController(serverUsecase, config.Log, config.Config)
+
+	userRepository := repository.NewUserRepository(config.Log, config.DB, config.DBCache, config.MinIO)
+	userUsecase := usecase.NewUserUsecase(userRepository, serverRepository, config.DB, config.Log, config.Config)
 	userController := http.NewUserController(userUsecase, config.Log, config.Config)
 
 	authMiddleware := middleware.NewAuthMiddleware(config.Router, config.Log, config.Config, userUsecase)
 
 	routeConfig := route.RouteConfig{
-		App:            config.Router,
-		UserController: userController,
-		AuthMiddleware: authMiddleware,
+		App:              config.Router,
+		UserController:   userController,
+		ServerController: serverController,
+		AuthMiddleware:   authMiddleware,
 	}
 
 	routeConfig.SetupRoute()

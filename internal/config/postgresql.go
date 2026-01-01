@@ -13,7 +13,7 @@ func NewPostgresqlPool(config *koanf.Koanf, log *zap.Logger) *pgxpool.Pool {
 	dsn := config.String("POSTGRES_URL")
 	pgxConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		log.Fatal("Failed to parse postgresl config", zap.Error(err))
+		log.Fatal("failed to parse postgresl config", zap.Error(err))
 	}
 
 	pgxConfig.MaxConns = 20
@@ -24,12 +24,12 @@ func NewPostgresqlPool(config *koanf.Koanf, log *zap.Logger) *pgxpool.Pool {
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), pgxConfig)
 	if err != nil {
-		log.Fatal("Failed to create pgx pool", zap.Error(err))
+		log.Fatal("failed to create pgx pool", zap.Error(err))
 	}
 
 	err = pool.Ping(context.Background())
 	if err != nil {
-		log.Fatal("Failed to ping PostgreSQL database", zap.Error(err))
+		log.Fatal("failed to ping postgresql database", zap.Error(err))
 	}
 
 	return pool
